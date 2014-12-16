@@ -31,7 +31,7 @@ class videoPanel(ELMProfileCore.videoPanel):
         self.imLeft.set_xlim(0,10)
         self.imLeft.set_ylim(0,100)
         self.plotLeft   = self.imLeft.plot(numpy.linspace(0,10,100), 40*numpy.ones(100))
-        videoSizerLeft  = self.GetSizer().GetItem(0).GetSizer()
+        videoSizerLeft  = self.m_leftMainSizer  #self.GetSizer().GetItem(0).GetSizer()
         videoSizerLeft.Prepend(self.canLeft, 10, wx.ALL | wx.EXPAND, 5)
         self.canLeft.draw()
         self.canLeft.mpl_connect('button_press_event', self.onClick)
@@ -39,6 +39,9 @@ class videoPanel(ELMProfileCore.videoPanel):
         self.timeValues = []
         self.xDummy     = []
         self.yDummy     = []
+        self.sepPos     = []
+        self.sepDummy   = numpy.nan
+        self.searchLocalMaxRange = 5
         self.figure     = matplotlib.pyplot.Figure()
         self.canvas     = matplotlib.backends.backend_wxagg.FigureCanvasWxAgg(self, -1, self.figure)
         self.image      = self.figure.add_subplot(111)
@@ -52,9 +55,8 @@ class videoPanel(ELMProfileCore.videoPanel):
             self.plot       = self.image.plot(testFrame.x[::self.reverseX], testFrame.y)
         except:
             self.plot       = self.image.plot([0,1],[0,1])
-#        videoSizerRight     = self.m_rightMainPanel.GetSizer()   # i want it in the blue box!
-#        videoSizerRight     = self.m_leftMainPanel.GetSizer()    #wrong but otherwise it does not work! should be on right panel!
-        videoSizerRight     = self.m_rightMainSizer               # nearly works, but still not right
+        self.lineSep = self.image.axvline(self.sepDummy)
+        videoSizerRight     = self.m_rightMainSizer
         videoSizerRight.Prepend(self.canvas, 10, wx.ALL | wx.EXPAND, 5)
         self.canvas.draw()
         self.canvas.mpl_connect('button_press_event', self.onClick)
@@ -89,7 +91,8 @@ class videoPanel(ELMProfileCore.videoPanel):
             self.plot       = self.image.plot(testFrame.x[::self.reverseX], testFrame.y)
         except:
             self.plot       = self.image.plot([0,1],[0,1])
-        self.plotLeft   = self.imLeft.plot(numpy.linspace(0,10,100), 40*numpy.ones(100))
+        self.sepDummy = numpy.nan
+        self.plotLeft       = self.imLeft.plot(numpy.linspace(0,10,100), 40*numpy.ones(100))
         self.imLeft.set_xlim(0,10)
         self.imLeft.set_ylim(0,100)
         self.image.set_xlim(0,100)
@@ -102,10 +105,23 @@ class videoPanel(ELMProfileCore.videoPanel):
 
 
     def onClick(self, event):
-        if event.button==1:
+        if event.button==1 and event.key=='shift':
+            ix = event.xdata
+            self.sepDummy = ix
+        elif event.button==1 and event.key!= 'shift':
             ix, iy = event.xdata, event.ydata
-            self.xDummy.append(ix)
-            self.yDummy.append(iy)
+            try:
+                tempXLoc      = numpy.abs(self.video.location-ix/1.0e3).argmin()
+                tempXstart    = (tempXLoc-self.searchLocalMaxRange) if (tempXLoc-self.searchLocalMaxRange)>0 else 0
+                tempXstop     = (tempXLoc+self.searchLocalMaxRange) if (tempXLoc+self.searchLocalMaxRange)<self.video.location.size else -1
+                locIndex      = self.video.data[self.currentFrame][tempXstart:tempXstop].argmax() + tempXLoc -self.searchLocalMaxRange
+                xLocalMax     = self.video.location[locIndex]*1.0e3
+                yLocalMax     = self.video.data[self.currentFrame][locIndex]/1.0e6
+                self.xDummy.append(xLocalMax)
+                self.yDummy.append(yLocalMax)
+            except:
+                self.xDummy.append(ix)
+                self.yDummy.append(iy)
         elif event.button==3:
             if len(self.xDummy)>0:
                 del self.xDummy[-1]
@@ -115,6 +131,7 @@ class videoPanel(ELMProfileCore.videoPanel):
         except:
             pass
         self.point = self.image.plot(self.xDummy,self.yDummy,'ro', ms=12)
+        self.lineSep.set_xdata(self.sepDummy)
         self.canvas.draw()
 
 
@@ -155,6 +172,9 @@ class videoPanel(ELMProfileCore.videoPanel):
         try:
             if index >= 0 and index < self.video.data.shape[0]:
                 temp =  self.video.data[index]/1.0e6
+                self.xValues.append(self.xDummy)
+                self.timeValues.append(self.video.time[self.currentFrame])
+                self.sepPos.append(self.sepDummy)
                 self.plot.pop(0).remove()
                 try:
                     self.point.pop(0).remove()
@@ -162,6 +182,8 @@ class videoPanel(ELMProfileCore.videoPanel):
                     pass
                 self.xDummy              = []
                 self.yDummy              = []
+                self.sepDummy            = numpy.nan
+                self.lineSep.set_xdata(self.sepDummy)
                 self.image.set_xlim(self.video.location[0]*1.0e3, self.video.location[-1]*1.0e3)
                 self.image.set_ylim(temp.min(), temp.max()+0.5)
                 self.currentFrame        = index
@@ -195,8 +217,6 @@ class videoPanel(ELMProfileCore.videoPanel):
 
     def OnNext(self, event):
         self.setFrame(self.currentFrame + 1)
-        self.xValues.append(self.xDummy)
-        self.timeValues.append(self.video.time[self.currentFrame])
 
     def FindELMs(self, event):
         timeStart              = float(self.m_startTime.Value)
@@ -243,6 +263,7 @@ class mainFrame(ELMProfileCore.mainFrame):
         self.Bind(wx.EVT_MENU, self.OnSavePositions, self.m_editMenuSavePositions)
         self.Bind(wx.EVT_MENU, self.OnSaveELMProfile, self.m_editMenuSaveELMProfile)
         self.Bind(wx.EVT_MENU, self.OnReverseX, self.m_menuOrientationReverseX)
+        self.Bind(wx.EVT_MENU, self.OnChangeRange, self.m_editMenuChangeRange)
         videoSizer = self.GetSizer()
         self.m_videoPanel = videoPanel(self)
         videoSizer.Add(self.m_videoPanel, 1, wx.ALL | wx.EXPAND, 5)
@@ -284,6 +305,7 @@ class mainFrame(ELMProfileCore.mainFrame):
         tempSave.shotNumber = self.shotNumber
         tempSave.time       = self.m_videoPanel.timeValues
         tempSave.xValues    = self.m_videoPanel.xValues
+        tempSave.sepPos     = self.m_videoPanel.sepPos
         tempSave.elmsStart  = self.ELMS.begin
         tempSave.elmsStop   = self.ELMS.end
         tempSave.elmsMax    = self.ELMS.max
@@ -303,5 +325,12 @@ class mainFrame(ELMProfileCore.mainFrame):
     def OnSaveELMProfile(self, event):
         saveString = '/afs/ipp-garching.mpg.de/home/m/mfai/workspace/pyElmStriations/program/ELM_Profiles/ELMProfile%d-%5.3f.eps' % (self.shotNumber,self.m_videoPanel.video.time[self.m_videoPanel.currentFrame] )
         self.m_videoPanel.saveImage(saveString)
+
+    def OnChangeRange(self, event):
+        dialog = openVideoDialog(self)
+        if dialog.ShowModal()==wx.ID_OK:
+            dialog.Show(False)
+            self.m_videoPanel.searchLocalMaxRange = numpy.int32(dialog.getSelection())
+
 
 

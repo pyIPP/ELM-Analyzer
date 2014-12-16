@@ -33,14 +33,7 @@ class videoPanel ( wx.Panel ):
 
 ##Left: #############################################
 #Main/Video:
-        m_leftMainSizer         = wx.BoxSizer( wx.VERTICAL )
-        #self.m_leftMainPanel    = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-        #m_leftMainSizer         = wx.BoxSizer( wx.VERTICAL )       
-        #self.m_leftMainPanel    = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-        #leftVideoSizer          = wx.BoxSizer( wx.VERTICAL )
-        #self.m_leftMainPanel.SetSizer( leftVideoSizer )
-        #self.m_leftMainPanel.Layout()
-        #leftVideoSizer.Fit( self.m_leftMainPanel )
+        self.m_leftMainSizer         = wx.BoxSizer( wx.VERTICAL )
 #Sub:
         leftSubSizer            = wx.BoxSizer( wx.HORIZONTAL )
         self.m_startTime        = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_PROCESS_ENTER )
@@ -64,18 +57,11 @@ class videoPanel ( wx.Panel ):
         leftSubSizer.Add(self.m_ELMButtonLeft, 0, wx.ALIGN_CENTER | wx.ALL, 5)
 #Main:
 
-        #m_leftMainSizer.Add( self.m_leftMainPanel, 10, wx.EXPAND |wx.ALL, 5 )
-        m_leftMainSizer.Add( leftSubSizer, 1, wx.EXPAND, 5 )
+        self. m_leftMainSizer.Add( leftSubSizer, 1, wx.EXPAND, 5 )
 
 ##Right: ###############################################
 #Main/video:
         self.m_rightMainSizer   = wx.BoxSizer( wx.VERTICAL )
-        #self.m_rightMainPanel   = wx.Panel( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
-        #rightVideoSizer         = wx.BoxSizer( wx.VERTICAL )
-        #self.m_rightMainPanel.SetSizer( rightVideoSizer )
-        #self.m_rightMainPanel.Layout()
-        #rightVideoSizer.Fit( self.m_rightMainPanel )
-
 #Sub:        
         rightSubSizer           = wx.BoxSizer( wx.HORIZONTAL )
         self.m_previousButton   = wx.Button( self, wx.ID_ANY, u"prev Frame", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -103,16 +89,12 @@ class videoPanel ( wx.Panel ):
 
         rightSubSizer.Add( self.m_currentTime, 0, wx.ALIGN_CENTER|wx.ALL, 5 )
 #Main:        
-        #self.m_rightMainSizer.Add( self.m_rightMainPanel, 10, wx.EXPAND |wx.ALL, 5 )
         self.m_rightMainSizer.Add( rightSubSizer, 1, wx.EXPAND, 5 )
 
 
 ##SUPER (the main sizer): #####################################################
 
-        #self.m_leftMainPanel.SetBackgroundColour("red")
-        #self.m_rightMainPanel.SetBackgroundColour("blue")
-
-        m_superSizer.Add( m_leftMainSizer, 1, wx.EXPAND, 5)
+        m_superSizer.Add( self.m_leftMainSizer, 1, wx.EXPAND, 5)
         m_superSizer.Add( self.m_rightMainSizer, 1, wx.EXPAND, 5)
 
         self.SetSizer( m_superSizer )
@@ -159,12 +141,18 @@ class mainFrame ( wx.Frame ):
         self.m_menuBar.Append( self.m_viewMenu, u"&View" ) 
 
         self.m_editMenu                = wx.Menu()
+        self.m_menuSave                = wx.Menu()
+
+        self.m_editMenu.AppendSubMenu( self.m_menuSave, u"&Save" )
+
         self.m_editMenuSaveImage       = wx.MenuItem(self.m_editMenu, wx.ID_ANY, u"Save &Image", wx.EmptyString, wx.ITEM_NORMAL)
-        self.m_editMenuSavePositions   = wx.MenuItem(self.m_editMenu, wx.ID_ANY, u"S&ave Stripes", wx.EmptyString, wx.ITEM_NORMAL)
-        self.m_editMenuSaveELMProfile  = wx.MenuItem(self.m_editMenu, wx.ID_ANY, u"S&ave ELM Profile", wx.EmptyString, wx.ITEM_NORMAL)
-        self.m_editMenu.AppendItem(self.m_editMenuSavePositions)
-        self.m_editMenu.AppendItem(self.m_editMenuSaveImage)
-        self.m_editMenu.AppendItem(self.m_editMenuSaveELMProfile)
+        self.m_editMenuSavePositions   = wx.MenuItem(self.m_editMenu, wx.ID_ANY, u"Save &Stripes", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_editMenuSaveELMProfile  = wx.MenuItem(self.m_editMenu, wx.ID_ANY, u"Save &ELM Profile", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_editMenuChangeRange     = wx.MenuItem(self.m_editMenu, wx.ID_ANY, u"&Change Range", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_menuSave.AppendItem(self.m_editMenuSavePositions)
+        self.m_menuSave.AppendItem(self.m_editMenuSaveImage)
+        self.m_menuSave.AppendItem(self.m_editMenuSaveELMProfile)
+        self.m_editMenu.AppendItem(self.m_editMenuChangeRange)
         self.m_editMenuSavePositions.Enable(False)
 
         self.m_menuBar.Append(self.m_editMenu, u'&Edit')
