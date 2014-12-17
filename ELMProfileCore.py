@@ -1,12 +1,3 @@
-# -*- coding: utf-8 -*- 
-
-###########################################################################
-## Python code generated with wxFormBuilder (version Feb 26 2014)
-## http://www.wxformbuilder.org/
-##
-## PLEASE DO "NOT" EDIT THIS FILE!
-###########################################################################
-
 import wx
 import wx.xrc
 

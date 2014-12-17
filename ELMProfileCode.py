@@ -2,6 +2,7 @@ import wx
 import matplotlib
 import matplotlib.pyplot
 import matplotlib.backends.backend_wxagg
+from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 import matplotlib.axes
 import matplotlib.image
 import matplotlib.cm
@@ -15,6 +16,7 @@ from bisect import bisect_right
 import scipy.misc
 import numpy
 import SigELM
+import wx.lib.agw.buttonpanel as BP
         
 class videoPopUp(wx.Menu):
     def __init__(self):
@@ -32,9 +34,23 @@ class videoPanel(ELMProfileCore.videoPanel):
         self.imLeft.set_ylim(0,100)
         self.plotLeft   = self.imLeft.plot(numpy.linspace(0,10,100), 40*numpy.ones(100))
         videoSizerLeft  = self.m_leftMainSizer  #self.GetSizer().GetItem(0).GetSizer()
-        videoSizerLeft.Prepend(self.canLeft, 10, wx.ALL | wx.EXPAND, 5)
+
+        leftTestsizer = wx.BoxSizer(wx.VERTICAL)
+
+        toolbar = NavigationToolbar2Wx(self.canLeft)
+        toolbar.update()
+        tw, th = toolbar.GetSizeTuple()
+        fw, fh = self.canLeft.GetSizeTuple()
+        toolbar.SetSize(wx.Size(fw, th))
+#        videoSizerLeft.Prepend(self.canLeft, 10, wx.ALL | wx.EXPAND, 5)
+
+        leftTestsizer.Add(self.canLeft, 1, wx.LEFT | wx.TOP | wx.GROW)
+        leftTestsizer.Add(toolbar, 0, wx.LEFT | wx.EXPAND)
+        videoSizerLeft.Prepend(leftTestsizer, 10,  wx.ALL | wx.EXPAND, 5)
+
         self.canLeft.draw()
         self.canLeft.mpl_connect('button_press_event', self.onClick)
+
         self.xValues    = []
         self.timeValues = []
         self.xDummy     = []
@@ -251,7 +267,6 @@ class openVideoDialog(ELMProfileCore.openVideoDialog):
         pulseNumber = self.getSelection()
         return IRCam.heatFluxProfiles(pulseNumber)
 
-
 class mainFrame(ELMProfileCore.mainFrame):
     def __init__(self, parent):
         ELMProfileCore.mainFrame.__init__(self, parent)
@@ -309,10 +324,10 @@ class mainFrame(ELMProfileCore.mainFrame):
         tempSave.elmsStart  = self.ELMS.begin
         tempSave.elmsStop   = self.ELMS.end
         tempSave.elmsMax    = self.ELMS.max
-        files               = [x for x in os.listdir('/afs/ipp-garching.mpg.de/home/m/mfai/workspace/pyElmStriations/program/ELM_Stribes') if str(tempSave.shotNumber) in x]
+        files               = [x for x in os.listdir('/afs/ipp-garching.mpg.de/home/m/mfai/workspace/pyElmStriations/ELM_Stribes') if str(tempSave.shotNumber) in x]
         tempEdition         = [int(x.split('-')[1].replace('.elmstribes','')) for x in files]
         edition             = ir.editions(tempSave.shotNumber, tempEdition).nextEdition
-        saveString          = '/afs/ipp-garching.mpg.de/home/m/mfai/workspace/pyElmStriations/program/ELM_Stribes/%d-%d.elmstribes' % (tempSave.shotNumber, edition)
+        saveString          = '/afs/ipp-garching.mpg.de/home/m/mfai/workspace/pyElmStriations/ELM_Stribes/%d-%d.elmstribes' % (tempSave.shotNumber, edition)
         tempSave.save(saveString)
         print 'Saved!'
 
@@ -323,7 +338,7 @@ class mainFrame(ELMProfileCore.mainFrame):
         dialog.Destroy()
 
     def OnSaveELMProfile(self, event):
-        saveString = '/afs/ipp-garching.mpg.de/home/m/mfai/workspace/pyElmStriations/program/ELM_Profiles/ELMProfile%d-%5.3f.eps' % (self.shotNumber,self.m_videoPanel.video.time[self.m_videoPanel.currentFrame] )
+        saveString = '/afs/ipp-garching.mpg.de/home/m/mfai/workspace/pyElmStriations/ELM_Profiles/ELMProfile%d-%5.3f.eps' % (self.shotNumber,self.m_videoPanel.video.time[self.m_videoPanel.currentFrame] )
         self.m_videoPanel.saveImage(saveString)
 
     def OnChangeRange(self, event):
