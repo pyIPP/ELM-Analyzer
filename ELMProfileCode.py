@@ -16,7 +16,6 @@ from bisect import bisect_right
 import scipy.misc
 import numpy
 import SigELM
-import wx.lib.agw.buttonpanel as BP
         
 class videoPopUp(wx.Menu):
     def __init__(self):
